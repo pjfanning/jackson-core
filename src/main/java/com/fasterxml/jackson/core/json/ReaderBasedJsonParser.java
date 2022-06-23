@@ -1350,7 +1350,7 @@ public class ReaderBasedJsonParser
 
         // One special case, leading zero(es):
         if (ch == INT_0) {
-            return _parseNumber2(false, startPtr);
+            return _parseNumber2(false, false, startPtr);
         }
 
         /* First, let's see if the whole number is contained within
@@ -1366,7 +1366,7 @@ public class ReaderBasedJsonParser
         while (true) {
             if (ptr >= inputLen) {
                 _inputPtr = startPtr;
-                return _parseNumber2(false, startPtr);
+                return _parseNumber2(false, false, startPtr);
             }
             ch = (int) _inputBuffer[ptr++];
             if (ch < INT_0 || ch > INT_9) {
@@ -1401,7 +1401,7 @@ public class ReaderBasedJsonParser
             fract_loop:
             while (true) {
                 if (ptr >= inputLen) {
-                    return _parseNumber2(neg, startPtr);
+                    return _parseNumber2(neg, false, startPtr);
                 }
                 ch = (int) _inputBuffer[ptr++];
                 if (ch < INT_0 || ch > INT_9) {
@@ -1420,14 +1420,14 @@ public class ReaderBasedJsonParser
         if (ch == 'e' || ch == 'E') { // and/or exponent
             if (ptr >= inputLen) {
                 _inputPtr = startPtr;
-                return _parseNumber2(neg, startPtr);
+                return _parseNumber2(neg, false, startPtr);
             }
             // Sign indicator?
             ch = (int) _inputBuffer[ptr++];
             if (ch == INT_MINUS || ch == INT_PLUS) { // yup, skip for now
                 if (ptr >= inputLen) {
                     _inputPtr = startPtr;
-                    return _parseNumber2(neg, startPtr);
+                    return _parseNumber2(neg, false, startPtr);
                 }
                 ch = (int) _inputBuffer[ptr++];
             }
@@ -1435,7 +1435,7 @@ public class ReaderBasedJsonParser
                 ++expLen;
                 if (ptr >= inputLen) {
                     _inputPtr = startPtr;
-                    return _parseNumber2(neg, startPtr);
+                    return _parseNumber2(neg, false, startPtr);
                 }
                 ch = (int) _inputBuffer[ptr++];
             }
@@ -1458,22 +1458,22 @@ public class ReaderBasedJsonParser
 
     protected final JsonToken _parsePosNumber() throws IOException
     {
-        return _parsePossibleNumber(false);
+        return _parseSignedNumber(false);
     }
 
     protected final JsonToken _parseNegNumber() throws IOException
     {
-        return _parsePossibleNumber(true);
+        return _parseSignedNumber(true);
     }
 
-    private JsonToken _parsePossibleNumber(final boolean negative) throws IOException
+    private JsonToken _parseSignedNumber(final boolean negative) throws IOException
     {
         int ptr = _inputPtr;
         int startPtr = negative ? ptr-1 : ptr; // to include sign/digit already read
         final int inputLen = _inputEnd;
 
         if (ptr >= inputLen) {
-            return _parseNumber2(negative, startPtr);
+            return _parseNumber2(negative, true, startPtr);
         }
         int ch = _inputBuffer[ptr++];
         // First check: must have a digit to follow minus sign
@@ -1486,7 +1486,7 @@ public class ReaderBasedJsonParser
         }
         // One special case, leading zero(es):
         if (ch == INT_0) {
-            return _parseNumber2(negative, startPtr);
+            return _parseNumber2(negative, true, startPtr);
         }
         int intLen = 1; // already got one
 
@@ -1494,7 +1494,7 @@ public class ReaderBasedJsonParser
         int_loop:
         while (true) {
             if (ptr >= inputLen) {
-                return _parseNumber2(negative, startPtr);
+                return _parseNumber2(negative, true, startPtr);
             }
             ch = (int) _inputBuffer[ptr++];
             if (ch < INT_0 || ch > INT_9) {
@@ -1533,7 +1533,7 @@ public class ReaderBasedJsonParser
      * @throws IOException for low-level read issues, or
      *   {@link JsonParseException} for decoding problems
      */
-    private final JsonToken _parseNumber2(boolean neg, int startPtr) throws IOException
+    private final JsonToken _parseNumber2(final boolean neg, final boolean signed, final int startPtr) throws IOException
     {
         _inputPtr = neg ? (startPtr+1) : startPtr;
         char[] outBuf = _textBuffer.emptyAndGetCurrentSegment();
@@ -1542,6 +1542,8 @@ public class ReaderBasedJsonParser
         // Need to prepend sign?
         if (neg) {
             outBuf[outPtr++] = '-';
+        } else if (signed) {
+            outBuf[outPtr++] = '+';
         }
 
         // This is the place to do leading-zero check(s) too:
