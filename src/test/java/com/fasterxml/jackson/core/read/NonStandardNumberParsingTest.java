@@ -42,7 +42,17 @@ public class NonStandardNumberParsingTest
                 p.nextToken();
                 fail("Should not pass");
             } catch (JsonParseException e) {
-                verifyException(e, "expected digit (0-9) to follow minus sign, for valid numeric value");
+                verifyException(e, "enable `JsonReadFeature.ALLOW_LEADING_PLUS_SIGN_FOR_NUMBERS` to allow");
+            }
+            p.close();
+        }
+        for (int mode : ALL_MODES) {
+            JsonParser p = createParser(mode, " +0.123 ");
+            try {
+                p.nextToken();
+                fail("Should not pass");
+            } catch (JsonParseException e) {
+                verifyException(e, "enable `JsonReadFeature.ALLOW_LEADING_PLUS_SIGN_FOR_NUMBERS` to allow");
             }
             p.close();
         }
