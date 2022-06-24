@@ -1508,9 +1508,11 @@ public class UTF8StreamJsonParser
         char[] outBuf = _textBuffer.emptyAndGetCurrentSegment();
         int outPtr = 0;
 
+        // Need to prepend sign?
         if (negative) {
-            // Need to prepend sign?
             outBuf[outPtr++] = '-';
+        } else {
+            outBuf[outPtr++] = '+';
         }
         // Must have something after sign too
         if (_inputPtr >= _inputEnd) {

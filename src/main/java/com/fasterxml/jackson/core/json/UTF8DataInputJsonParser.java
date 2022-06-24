@@ -1095,9 +1095,11 @@ public class UTF8DataInputJsonParser
         char[] outBuf = _textBuffer.emptyAndGetCurrentSegment();
         int outPtr = 0;
 
+        // Need to prepend sign?
         if (negative) {
-            // Need to prepend sign?
             outBuf[outPtr++] = '-';
+        } else {
+            outBuf[outPtr++] = '+';
         }
         int c = _inputData.readUnsignedByte();
         outBuf[outPtr++] = (char) c;

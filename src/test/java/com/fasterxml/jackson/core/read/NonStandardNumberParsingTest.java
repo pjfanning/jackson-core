@@ -123,19 +123,19 @@ public class NonStandardNumberParsingTest
             assertEquals(JsonToken.VALUE_NUMBER_INT, p.nextToken());
             assertEquals(125.0, p.getValueAsDouble());
             assertEquals("125", p.getDecimalValue().toString());
-            assertEquals("125", p.getText());
+            assertEquals("+125", p.getText());
         }
         try (JsonParser p = createParser(f, mode, " +0.125 ")) {
             assertEquals(JsonToken.VALUE_NUMBER_FLOAT, p.nextToken());
             assertEquals(0.125, p.getValueAsDouble());
             assertEquals("0.125", p.getDecimalValue().toString());
-            assertEquals("0.125", p.getText());
+            assertEquals("+0.125", p.getText());
         }
         try (JsonParser p = createParser(f, mode, " +.125 ")) {
             assertEquals(JsonToken.VALUE_NUMBER_FLOAT, p.nextToken());
             assertEquals(0.125, p.getValueAsDouble());
             assertEquals("0.125", p.getDecimalValue().toString());
-            assertEquals(".125", p.getText());
+            assertEquals("+.125", p.getText());
         }
     }
 
