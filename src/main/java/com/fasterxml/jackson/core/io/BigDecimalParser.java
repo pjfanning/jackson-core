@@ -1,5 +1,7 @@
 package com.fasterxml.jackson.core.io;
 
+import com.fasterxml.jackson.core.io.doubleparser.JavaBigDecimalParser;
+
 import java.math.BigDecimal;
 import java.util.Arrays;
 
@@ -26,10 +28,18 @@ public final class BigDecimalParser
     private BigDecimalParser() {}
 
     public static BigDecimal parse(String valueStr) {
-        return parse(valueStr.toCharArray());
+        return JavaBigDecimalParser.parseBigDecimal(valueStr);
     }
 
     public static BigDecimal parse(final char[] chars, final int off, final int len) {
+        return JavaBigDecimalParser.parseBigDecimal(chars, off, len);
+    }
+
+    public static BigDecimal parse(final char[] chars) {
+        return JavaBigDecimalParser.parseBigDecimal(chars);
+    }
+
+    public static BigDecimal xparse(final char[] chars, final int off, final int len) {
         try {
             if (len < 500) {
                 return new BigDecimal(chars, off, len);
@@ -56,7 +66,7 @@ public final class BigDecimalParser
         }
     }
 
-    public static BigDecimal parse(char[] chars) {
+    public static BigDecimal xparse(char[] chars) {
         return parse(chars, 0, chars.length);
     }
 
