@@ -1,5 +1,6 @@
 package com.fasterxml.jackson.core.io;
 
+import com.fasterxml.jackson.core.io.doubleparser.JavaBigIntegerParser;
 import com.fasterxml.jackson.core.io.doubleparser.JavaDoubleParser;
 import com.fasterxml.jackson.core.io.doubleparser.JavaFloatParser;
 
@@ -399,9 +400,6 @@ public final class NumberInput
      * @since v2.14
      */
     public static BigInteger parseBigInteger(String s) throws NumberFormatException {
-        if (s.length() > LARGE_INT_SIZE) {
-            return BigDecimalParser.parse(s).toBigInteger();
-        }
-        return new BigInteger(s);
+        return JavaBigIntegerParser.parseBigIntegerOrNull(s);
     }
 }
