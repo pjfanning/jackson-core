@@ -28,15 +28,30 @@ public final class BigDecimalParser
     private BigDecimalParser() {}
 
     public static BigDecimal parse(String valueStr) {
-        return JavaBigDecimalParser.parseBigDecimal(valueStr);
+        try {
+            return JavaBigDecimalParser.parseBigDecimal(valueStr);
+        } catch (NumberFormatException nfe) {
+            final String reportNum = valueStr.length() <= MAX_CHARS_TO_REPORT ?
+                    valueStr : valueStr.substring(0, MAX_CHARS_TO_REPORT) + " [truncated]";
+            throw new NumberFormatException("Value \"" + reportNum
+                    + "\" can not be represented as `java.math.BigDecimal`, reason: " + nfe.getMessage());
+        }
     }
 
     public static BigDecimal parse(final char[] chars, final int off, final int len) {
-        return JavaBigDecimalParser.parseBigDecimal(chars, off, len);
+        try {
+            return JavaBigDecimalParser.parseBigDecimal(chars);
+        } catch (NumberFormatException nfe) {
+            final String reportNum = len <= MAX_CHARS_TO_REPORT ?
+                    new String(chars, off, len) : new String(chars, off, MAX_CHARS_TO_REPORT) + " [truncated]";
+            final int reportLen = Math.min(len, MAX_CHARS_TO_REPORT);
+            throw new NumberFormatException("Value \"" + new String(chars, off, reportLen)
+                    + "\" can not be represented as `java.math.BigDecimal`, reason: " + nfe.getMessage());
+        }
     }
 
     public static BigDecimal parse(final char[] chars) {
-        return JavaBigDecimalParser.parseBigDecimal(chars);
+        return parse(chars, 0, chars.length);
     }
 
     public static BigDecimal xparse(final char[] chars, final int off, final int len) {
