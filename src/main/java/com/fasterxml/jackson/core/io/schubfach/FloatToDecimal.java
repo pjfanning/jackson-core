@@ -111,7 +111,7 @@ final public class FloatToDecimal {
         -d.ddddddddE-ee     H + 6 characters
     where there are H digits d
      */
-    public final int MAX_CHARS = H + 6;
+    public final static int MAX_CHARS = H + 6;
 
     // Numerical results are created here...
     private final byte[] bytes = new byte[MAX_CHARS];
