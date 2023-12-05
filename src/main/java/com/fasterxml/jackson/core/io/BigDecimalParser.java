@@ -25,6 +25,8 @@ public final class BigDecimalParser
 {
     final static int MAX_CHARS_TO_REPORT = 1000;
 
+    private final static int MAX_SCALE = 1000;
+
     private BigDecimalParser() {}
 
     public static BigDecimal parse(String valueStr) {
@@ -36,7 +38,11 @@ public final class BigDecimalParser
             if (len < 500) {
                 return new BigDecimal(chars, off, len);
             }
-            return parseBigDecimal(chars, off, len, len / 10);
+            try {
+                return parseBigDecimal(chars, off, len, len / 10);
+            } catch (FailoverException fex) {
+                return new BigDecimal(chars, off, len);
+            }
 
         // 20-Aug-2022, tatu: Although "new BigDecimal(...)" only throws NumberFormatException
         //    operations by "parseBigDecimal()" can throw "ArithmeticException", so handle both:
@@ -194,6 +200,9 @@ public final class BigDecimalParser
 
     private static BigDecimal toBigDecimalRec(final char[] chars, final int off, final int len,
                                               final int scale, final int splitLen) {
+        if (scale > MAX_SCALE) {
+            throw new FailoverException();
+        }
         if (len > splitLen) {
             int mid = len / 2;
             BigDecimal left = toBigDecimalRec(chars, off, mid, scale + len - mid, splitLen);
@@ -210,5 +219,13 @@ public final class BigDecimalParser
         return new BigDecimal(chars, off, len)
 //                .movePointRight(scale);
                 .scaleByPowerOfTen(scale);
+    }
+
+    private static class FailoverException extends RuntimeException {
+
+        @Override
+        public synchronized Throwable fillInStackTrace() {
+            return this;
+        }
     }
 }
