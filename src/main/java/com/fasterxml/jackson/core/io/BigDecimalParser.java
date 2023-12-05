@@ -25,8 +25,6 @@ public final class BigDecimalParser
 {
     final static int MAX_CHARS_TO_REPORT = 1000;
 
-    private final static int MAX_SCALE = 1000;
-
     private BigDecimalParser() {}
 
     public static BigDecimal parse(String valueStr) {
@@ -146,6 +144,10 @@ public final class BigDecimalParser
                 dotIdx = i;
                 break;
             default:
+                if (c < '0' || c > '9') {
+                    // we want to failover to using `new BigDecimal(...)` if unexpected chars are found
+                    throw new FailoverException();
+                }
                 if (dotIdx >= 0 && expIdx == -1) {
                     scale++;
                 }
@@ -200,9 +202,6 @@ public final class BigDecimalParser
 
     private static BigDecimal toBigDecimalRec(final char[] chars, final int off, final int len,
                                               final int scale, final int splitLen) {
-        if (scale > MAX_SCALE) {
-            throw new FailoverException();
-        }
         if (len > splitLen) {
             int mid = len / 2;
             BigDecimal left = toBigDecimalRec(chars, off, mid, scale + len - mid, splitLen);
