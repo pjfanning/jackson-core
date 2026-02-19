@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Number Length Constraint Bypass in Non-Blocking (Async) JSON Parsers
  */
-class AsyncParserNumberLengthBypassTest {
+public class AsyncParserNumberLengthBypassTest {
 
     private static final int TEST_NUMBER_LENGTH = 5000;
 
@@ -41,7 +41,8 @@ class AsyncParserNumberLengthBypassTest {
             }
             fail("Async parser must reject a " + TEST_NUMBER_LENGTH + "-digit number");
         } catch (StreamConstraintsException e) {
-            // expected
+            assertTrue(e.getMessage().contains("Number value length"),
+                    "Unexpected exception message: " + e.getMessage());
         }
         p.close();
     }
@@ -67,7 +68,8 @@ class AsyncParserNumberLengthBypassTest {
             }
             fail("Async parser must reject a " + TEST_NUMBER_LENGTH + "-digit number");
         } catch (StreamConstraintsException e) {
-            // expected
+            assertTrue(e.getMessage().contains("Number value length"),
+                    "Unexpected exception message: " + e.getMessage());
         }
         p.close();
     }
