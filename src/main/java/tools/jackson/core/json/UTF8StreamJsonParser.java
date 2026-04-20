@@ -1,6 +1,9 @@
 package tools.jackson.core.json;
 
 import java.io.*;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
+import java.nio.ByteOrder;
 
 import tools.jackson.core.*;
 import tools.jackson.core.exc.JacksonIOException;
@@ -31,6 +34,27 @@ public class UTF8StreamJsonParser
     // Latin1 encoding is not supported, but we do use 8-bit subset for
     // pre-processing task, to simplify first pass, keep it fast.
     protected final static int[] _icLatin1 = CharTypes.getInputCodeLatin1();
+
+    /**
+     * VarHandle for reading 4 bytes from a byte[] as a big-endian int.
+     * Used in {@link #parseLongName} to read one quad word in a single operation.
+     */
+    private static final VarHandle INT_VH;
+
+    /**
+     * VarHandle for reading 8 bytes from a byte[] as a big-endian long.
+     * Used in {@link #nextName(SerializableString)} to compare 8 bytes at a time.
+     */
+    private static final VarHandle LONG_VH;
+
+    static {
+        try {
+            INT_VH  = MethodHandles.byteArrayViewVarHandle(int[].class,  ByteOrder.BIG_ENDIAN);
+            LONG_VH = MethodHandles.byteArrayViewVarHandle(long[].class, ByteOrder.BIG_ENDIAN);
+        } catch (Exception e) {
+            throw new ExceptionInInitializerError(e);
+        }
+    }
 
     /*
     /**********************************************************************
@@ -1093,18 +1117,35 @@ public class UTF8StreamJsonParser
                 if (_inputBuffer[end] == INT_QUOTE) {
                     int offset = 0;
                     int ptr = _inputPtr;
-                    while (true) {
-                        if (ptr == end) { // yes, match!
-                            _streamReadContext.setCurrentName(str.getValue());
-                            i = _skipColonFast(ptr+1);
-                            _isNextTokenNameYes(i);
-                            return true;
-                        }
-                        if (nameBytes[offset] != _inputBuffer[ptr]) {
+                    boolean matched = true;
+                    // Fast path: compare 8 bytes at a time using a long VarHandle.
+                    // The bounds guard above ensures _inputPtr + len + 4 < _inputEnd,
+                    // so whenever end - ptr >= 8 we know ptr + 8 < _inputEnd.
+                    while ((end - ptr) >= 8) {
+                        if ((long) LONG_VH.get(nameBytes, offset)
+                                != (long) LONG_VH.get(_inputBuffer, ptr)) {
+                            matched = false;
                             break;
                         }
-                        ++offset;
-                        ++ptr;
+                        offset += 8;
+                        ptr += 8;
+                    }
+                    // Compare any remaining bytes one by one (skipped on early mismatch)
+                    if (matched) {
+                        while (ptr < end) {
+                            if (nameBytes[offset] != _inputBuffer[ptr]) {
+                                matched = false;
+                                break;
+                            }
+                            ++offset;
+                            ++ptr;
+                        }
+                    }
+                    if (matched) { // full match!
+                        _streamReadContext.setCurrentName(str.getValue());
+                        i = _skipColonFast(ptr+1);
+                        _isNextTokenNameYes(i);
+                        return true;
                     }
                 }
             }
@@ -2281,6 +2322,46 @@ public class UTF8StreamJsonParser
         int qlen = 3;
 
         while ((_inputPtr + 4) <= _inputEnd) {
+            // Fast path: use a VarHandle to read the next 4 bytes in a single
+            // operation, then check all 4 bytes for special characters via SWAR
+            // (SIMD Within A Register) bit tricks before falling back to
+            // byte-by-byte processing.
+            //
+            // `q` is the method-local variable that holds the first byte of the
+            // current quad being assembled (single byte on entry, and maintained
+            // as a single byte across iterations by the fast path below).
+            // We read 4 bytes (i1..i4) from the input and produce:
+            //   quad = (q << 24) | (i1 << 16) | (i2 << 8) | i3
+            //   new q = i4
+            //
+            // SWAR checks (all must be zero for the fast path):
+            //   (nextQuad & 0x80808080)                       -- no byte >= 0x80 (non-ASCII / multi-byte UTF-8)
+            //   (nextQuad - 0x20202020) & ~nextQuad & 0x80808080  -- no byte < 0x20 (control chars)
+            //   hasZero(nextQuad ^ 0x22222222)               -- no byte == 0x22 ('"')
+            //   hasZero(nextQuad ^ 0x5C5C5C5C)               -- no byte == 0x5C ('\')
+            //
+            // hasZero(x) = (x - 0x01010101) & ~x & 0x80808080
+            int nextQuad = (int) INT_VH.get(input, _inputPtr);
+            int xq = nextQuad ^ 0x22222222;
+            int xs = nextQuad ^ 0x5C5C5C5C;
+            int needsEscape = (nextQuad & 0x80808080)
+                    | ((nextQuad - 0x20202020) & ~nextQuad & 0x80808080)
+                    | ((xq - 0x01010101) & ~xq & 0x80808080)
+                    | ((xs - 0x01010101) & ~xs & 0x80808080);
+            if (needsEscape == 0) {
+                // All 4 bytes are plain, unescaped ASCII: commit the quad and advance.
+                if (qlen >= _quadBuffer.length) {
+                    _quadBuffer = _growNameDecodeBuffer(_quadBuffer, qlen);
+                }
+                // Build the stored quad from current q (1 byte) and the first 3 of nextQuad
+                _quadBuffer[qlen++] = (q << 24) | (nextQuad >>> 8);
+                // The 4th byte of nextQuad starts the next q
+                q = nextQuad & 0xFF;
+                _inputPtr += 4;
+                continue;
+            }
+
+            // Slow path: at least one byte needs inspection; fall back to byte-by-byte.
             int i = input[_inputPtr++] & 0xFF;
             if (codes[i] != 0) {
                 if (i == INT_QUOTE) {
