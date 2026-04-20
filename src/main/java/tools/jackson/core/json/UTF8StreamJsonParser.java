@@ -1117,30 +1117,31 @@ public class UTF8StreamJsonParser
                 if (_inputBuffer[end] == INT_QUOTE) {
                     int offset = 0;
                     int ptr = _inputPtr;
+                    boolean matched = true;
                     // Fast path: compare 8 bytes at a time using a long VarHandle.
                     // The bounds guard above ensures _inputPtr + len + 4 < _inputEnd,
                     // so whenever end - ptr >= 8 we know ptr + 8 < _inputEnd.
                     while ((end - ptr) >= 8) {
                         if ((long) LONG_VH.get(nameBytes, offset)
                                 != (long) LONG_VH.get(_inputBuffer, ptr)) {
-                            offset = -1; // signal mismatch
+                            matched = false;
                             break;
                         }
                         offset += 8;
                         ptr += 8;
                     }
-                    // Compare any remaining bytes one by one (or fall through if mismatch)
-                    if (offset >= 0) {
+                    // Compare any remaining bytes one by one (skipped on early mismatch)
+                    if (matched) {
                         while (ptr < end) {
                             if (nameBytes[offset] != _inputBuffer[ptr]) {
-                                offset = -1; // mismatch
+                                matched = false;
                                 break;
                             }
                             ++offset;
                             ++ptr;
                         }
                     }
-                    if (offset >= 0) { // full match!
+                    if (matched) { // full match!
                         _streamReadContext.setCurrentName(str.getValue());
                         i = _skipColonFast(ptr+1);
                         _isNextTokenNameYes(i);
@@ -2326,8 +2327,10 @@ public class UTF8StreamJsonParser
             // (SIMD Within A Register) bit tricks before falling back to
             // byte-by-byte processing.
             //
-            // `q` holds the first byte of the current quad being assembled.
-            // We read 4 bytes (i1..i4) and produce:
+            // `q` is the method-local variable that holds the first byte of the
+            // current quad being assembled (single byte on entry, and maintained
+            // as a single byte across iterations by the fast path below).
+            // We read 4 bytes (i1..i4) from the input and produce:
             //   quad = (q << 24) | (i1 << 16) | (i2 << 8) | i3
             //   new q = i4
             //

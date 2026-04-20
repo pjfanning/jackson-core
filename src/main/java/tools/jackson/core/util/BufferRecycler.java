@@ -27,13 +27,11 @@ public class BufferRecycler
      * memory ordering semantics (acquire on alloc, release on release) rather
      * than the unconditional volatile barriers that AtomicReferenceArray imposes.
      */
-    private static final VarHandle BYTE_VH;
-    private static final VarHandle CHAR_VH;
+    private static final VarHandle BUFFER_VH;
 
     static {
         try {
-            BYTE_VH = MethodHandles.arrayElementVarHandle(Object[].class);
-            CHAR_VH = MethodHandles.arrayElementVarHandle(Object[].class);
+            BUFFER_VH = MethodHandles.arrayElementVarHandle(Object[].class);
         } catch (Exception e) {
             throw new ExceptionInInitializerError(e);
         }
@@ -180,7 +178,7 @@ public class BufferRecycler
         }
         // getAndSetAcquire: atomically claims the slot and applies acquire semantics so
         // that all writes made by the thread that stored this buffer are visible to us.
-        byte[] buffer = (byte[]) BYTE_VH.getAndSetAcquire(_byteBuffers, ix, null);
+        byte[] buffer = (byte[]) BUFFER_VH.getAndSetAcquire(_byteBuffers, ix, null);
         if (buffer == null || buffer.length < minSize) {
             buffer = balloc(minSize);
         }
@@ -192,12 +190,12 @@ public class BufferRecycler
         // compareAndSet with release semantics publishes all our writes to the next
         // thread that acquires this buffer.
         while (true) {
-            byte[] current = (byte[]) BYTE_VH.getAcquire(_byteBuffers, ix);
+            byte[] current = (byte[]) BUFFER_VH.getAcquire(_byteBuffers, ix);
             if (current != null && current.length >= buffer.length) {
                 // Slot already holds a buffer at least as large; no benefit in replacing it.
                 return;
             }
-            if (BYTE_VH.compareAndSet(_byteBuffers, ix, current, buffer)) {
+            if (BUFFER_VH.compareAndSet(_byteBuffers, ix, current, buffer)) {
                 return;
             }
             // CAS lost the race; retry with the newly observed value.
@@ -220,7 +218,7 @@ public class BufferRecycler
             minSize = DEF_SIZE;
         }
         // getAndSetAcquire: atomically claims the slot with acquire semantics.
-        char[] buffer = (char[]) CHAR_VH.getAndSetAcquire(_charBuffers, ix, null);
+        char[] buffer = (char[]) BUFFER_VH.getAndSetAcquire(_charBuffers, ix, null);
         if (buffer == null || buffer.length < minSize) {
             buffer = calloc(minSize);
         }
@@ -231,11 +229,11 @@ public class BufferRecycler
         // CAS loop fixes the TOCTOU race in the original get+set pattern.
         // compareAndSet with release semantics publishes our writes to the next thread.
         while (true) {
-            char[] current = (char[]) CHAR_VH.getAcquire(_charBuffers, ix);
+            char[] current = (char[]) BUFFER_VH.getAcquire(_charBuffers, ix);
             if (current != null && current.length >= buffer.length) {
                 return;
             }
-            if (CHAR_VH.compareAndSet(_charBuffers, ix, current, buffer)) {
+            if (BUFFER_VH.compareAndSet(_charBuffers, ix, current, buffer)) {
                 return;
             }
         }
