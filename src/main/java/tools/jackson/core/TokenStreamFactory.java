@@ -14,6 +14,8 @@ import java.util.Objects;
 
 import tools.jackson.core.async.ByteArrayFeeder;
 import tools.jackson.core.async.ByteBufferFeeder;
+import tools.jackson.core.async.CharArrayFeeder;
+import tools.jackson.core.async.CharBufferFeeder;
 import tools.jackson.core.exc.JacksonIOException;
 import tools.jackson.core.exc.StreamReadException;
 import tools.jackson.core.io.*;
@@ -932,6 +934,46 @@ public abstract class TokenStreamFactory
      */
     public <P extends JsonParser & ByteBufferFeeder> P createNonBlockingByteBufferParser(ObjectReadContext readCtxt)
         throws JacksonException {
+        return _unsupported("Non-blocking source not (yet?) supported for this format ("+getFormatName()+")");
+    }
+
+    /**
+     * Optional method for constructing parser for non-blocking parsing
+     * via {@link CharArrayFeeder} interface (accessed using
+     * {@link JsonParser#nonBlockingInputFeeder()} from constructed instance).
+     *<p>
+     * If this factory does not support non-blocking parsing (either at all,
+     * or from char array), will throw {@link UnsupportedOperationException}.
+     *
+     * @param <P> Nominal type of parser constructed and returned
+     * @param readCtxt Object read context to use
+     *
+     * @return Non-blocking parser constructed
+     *
+     * @throws JacksonException If parser construction or initialization fails
+     */
+    public <P extends JsonParser & CharArrayFeeder> P createNonBlockingCharArrayParser(ObjectReadContext readCtxt)
+            throws JacksonException {
+        return _unsupported("Non-blocking source not (yet?) supported for this format ("+getFormatName()+")");
+    }
+
+    /**
+     * Optional method for constructing parser for non-blocking parsing
+     * via {@link CharBufferFeeder} interface (accessed using
+     * {@link JsonParser#nonBlockingInputFeeder()} from constructed instance).
+     *<p>
+     * If this factory does not support non-blocking parsing (either at all,
+     * or from char buffer), will throw {@link UnsupportedOperationException}.
+     *
+     * @param <P> Nominal type of parser constructed and returned
+     * @param readCtxt Object read context to use
+     *
+     * @return Non-blocking parser constructed
+     *
+     * @throws JacksonException If parser construction or initialization fails
+     */
+    public <P extends JsonParser & CharBufferFeeder> P createNonBlockingCharBufferParser(ObjectReadContext readCtxt)
+            throws JacksonException {
         return _unsupported("Non-blocking source not (yet?) supported for this format ("+getFormatName()+")");
     }
 

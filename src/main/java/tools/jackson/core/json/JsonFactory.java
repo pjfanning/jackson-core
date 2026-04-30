@@ -13,6 +13,8 @@ import tools.jackson.core.base.TextualTSFactory;
 import tools.jackson.core.io.*;
 import tools.jackson.core.json.async.NonBlockingByteArrayJsonParser;
 import tools.jackson.core.json.async.NonBlockingByteBufferJsonParser;
+import tools.jackson.core.json.async.NonBlockingCharArrayJsonParser;
+import tools.jackson.core.json.async.NonBlockingCharBufferJsonParser;
 import tools.jackson.core.sym.BinaryNameMatcher;
 import tools.jackson.core.sym.ByteQuadsCanonicalizer;
 import tools.jackson.core.sym.CharsToNameCanonicalizer;
@@ -367,6 +369,28 @@ public class JsonFactory
                 readCtxt.getStreamReadFeatures(_streamReadFeatures),
                 readCtxt.getFormatReadFeatures(_formatReadFeatures),
                 can);
+    }
+
+    @Override
+    public JsonParser createNonBlockingCharArrayParser(ObjectReadContext readCtxt) {
+        IOContext ioCtxt = _createNonBlockingContext(null);
+        ByteQuadsCanonicalizer dummyByteSym = _byteSymbolCanonicalizer.makeChildOrPlaceholder(_factoryFeatures);
+        CharsToNameCanonicalizer charSym = _rootCharSymbols.makeChild();
+        return new NonBlockingCharArrayJsonParser(readCtxt, ioCtxt,
+                readCtxt.getStreamReadFeatures(_streamReadFeatures),
+                readCtxt.getFormatReadFeatures(_formatReadFeatures),
+                dummyByteSym, charSym);
+    }
+
+    @Override
+    public JsonParser createNonBlockingCharBufferParser(ObjectReadContext readCtxt) {
+        IOContext ioCtxt = _createNonBlockingContext(null);
+        ByteQuadsCanonicalizer dummyByteSym = _byteSymbolCanonicalizer.makeChildOrPlaceholder(_factoryFeatures);
+        CharsToNameCanonicalizer charSym = _rootCharSymbols.makeChild();
+        return new NonBlockingCharBufferJsonParser(readCtxt, ioCtxt,
+                readCtxt.getStreamReadFeatures(_streamReadFeatures),
+                readCtxt.getFormatReadFeatures(_formatReadFeatures),
+                dummyByteSym, charSym);
     }
 
     protected IOContext _createNonBlockingContext(Object srcRef) {
