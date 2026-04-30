@@ -166,30 +166,6 @@ public abstract class NonBlockingJsonCharParserBase
 
     /*
     /**********************************************************************
-    /* Unused abstract methods from parent (byte-based): provide stubs
-    /**********************************************************************
-     */
-
-    @Override
-    protected byte getNextSignedByteFromBuffer() {
-        VersionUtil.throwInternal();
-        return 0;
-    }
-
-    @Override
-    protected int getNextUnsignedByteFromBuffer() {
-        VersionUtil.throwInternal();
-        return 0;
-    }
-
-    @Override
-    protected byte getByteFromBuffer(int ptr) {
-        VersionUtil.throwInternal();
-        return 0;
-    }
-
-    /*
-    /**********************************************************************
     /* Main-level decoding
     /**********************************************************************
      */
