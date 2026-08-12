@@ -296,7 +296,7 @@ public final class NumberOutput
      * @return offset within buffer after the last byte written
      * @since 3.3
      */
-    public static int writeFloat(float v, byte[] buf, int off) {
+    public static int outputFloat(float v, byte[] buf, int off) {
         return XJBWriter.writeFloat(v, buf, off);
     }
 
@@ -311,7 +311,7 @@ public final class NumberOutput
      * @return offset within buffer after the last byte written
      * @since 3.3
      */
-    public static int writeDouble(double v, byte[] buf, int off) {
+    public static int outputDouble(double v, byte[] buf, int off) {
         return XJBWriter.writeDouble(v, buf, off);
     }
 
