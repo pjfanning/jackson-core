@@ -36,6 +36,20 @@ public final class NumberOutput
         }
     }
 
+    /**
+     * Maximum number of UTF-8 bytes needed to represent a {@code float} value.
+     * Based on MAX_CHARS = H + 6 where H is the maximum number of significant digits.
+     * @since 3.3
+     */
+    public static final int MAX_FLOAT_BYTES = 15;
+
+    /**
+     * Maximum number of UTF-8 bytes needed to represent a {@code double} value.
+     * Based on MAX_CHARS = H + 7 where H is the maximum number of significant digits.
+     * @since 3.3
+     */
+    public static final int MAX_DOUBLE_BYTES = 24;
+
     /*
     /**********************************************************************
     /* Efficient serialization methods using raw buffers

@@ -1077,8 +1077,7 @@ public class UTF8JsonGenerator
         }
         _verifyValueWrite(WRITE_NUMBER);
         if (useFast) {
-            // Direct-to-buffer write: XJB outputs at most 48 bytes for doubles
-            if ((_outputTail + 48) > _outputEnd) {
+            if ((_outputTail + NumberOutput.MAX_DOUBLE_BYTES) > _outputEnd) {
                 _flushBuffer();
             }
             _outputTail = NumberOutput.outputDouble(d, _outputBuffer, _outputTail);
@@ -1099,8 +1098,7 @@ public class UTF8JsonGenerator
         }
         _verifyValueWrite(WRITE_NUMBER);
         if (useFast) {
-            // Direct-to-buffer write: XJB outputs at most 32 bytes for floats
-            if ((_outputTail + 32) > _outputEnd) {
+            if ((_outputTail + NumberOutput.MAX_FLOAT_BYTES) > _outputEnd) {
                 _flushBuffer();
             }
             _outputTail = NumberOutput.outputFloat(f, _outputBuffer, _outputTail);
