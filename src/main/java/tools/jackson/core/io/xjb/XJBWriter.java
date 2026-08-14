@@ -393,9 +393,7 @@ public final class XJBWriter {
                 int lastPos = writeSignificantFractionDigitsChar(m10, pos + len, pos, buf, ds);
                 // The pair-based digit writer may have written a padding char at pos.
                 // Shift the integer-part digits left by 1 to remove it, then insert '.'
-                for (int i = pos; i < pos + e10 + 1; i++) {
-                    buf[i] = buf[i + 1];
-                }
+                System.arraycopy(buf, pos + 1, buf, pos, e10 + 1);
                 buf[pos + e10 + 1] = '.';
                 pos = lastPos;
             } else {
@@ -543,9 +541,7 @@ public final class XJBWriter {
                 int lastPos = writeSignificantFractionDigitsLongChar(m10, pos + len, pos, buf, ds);
                 // The pair-based digit writer may have written a padding char at pos.
                 // Shift the integer-part digits left by 1 to remove it, then insert '.'
-                for (int i = pos; i < pos + e10 + 1; i++) {
-                    buf[i] = buf[i + 1];
-                }
+                System.arraycopy(buf, pos + 1, buf, pos, e10 + 1);
                 buf[pos + e10 + 1] = '.';
                 pos = lastPos;
             } else {
